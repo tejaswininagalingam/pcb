@@ -1,0 +1,279 @@
+Hardware Design Specification – V1 (Production-Grade)
+
+1. Project Scope (Hardware + Manufacturability)
+
+Design a high-performance embedded real-time control board based on an STM32H7 microcontroller, suitable for high-frequency control loops, deterministic outputs, precision sensing, and high-rate data logging.
+
+Scope includes:
+	•	Schematic design
+	•	PCB layout
+	•	DFM/DFA validation
+	•	Thermal analysis
+	•	Signal Integrity (SI) & Power Integrity (PI) analysis
+	•	EMI/EMC-aware layout
+	•	Manufacturing outputs
+	•	Design documentation
+
+2. MCU Selection (ABSOLUTELY FIXED)
+
+Microcontroller
+	•	Manufacturer: STMicroelectronics
+	•	Part Number: STM32H743VIT6
+	•	Package: LQFP-100
+	•	Core: ARM Cortex-M7 @ 480 MHz
+	•	Flash: 2 MB
+	•	RAM: ~1 MB
+	•	USB: USB 2.0 Full-Speed (Device)
+	•	Required peripherals:
+	•	Advanced timers TIM1, TIM8
+	•	SPI, SDIO, UART, I2C, ADC
+
+No BGA packages
+No alternative H7 variants
+Pin usage must strictly follow LQFP-100 datasheet
+
+3. Mechanical & PCB Constraints
+	•	Board size: 30.5 mm × 30.5 mm
+	•	Mounting: 4 × M3 holes
+	•	PCB stack-up:
+	•	6-layer strongly recommended
+	•	4-layer allowed only with documented EMI/PI justification
+	•	Assembly: SMT (top-side preferred)
+
+4. Power Architecture (LOCKED)
+
+Input
+	•	VBAT: 2S–8S Li-ion / Li-Po equivalent
+
+Power Rails
+	1.	5V_MAIN
+	•	Buck regulator
+	•	≥3 A continuous
+	2.	9V_AUX
+	•	Buck regulator
+	•	≥2 A
+	•	Electrically isolated from logic rail
+	3.	3V3_DIGITAL
+	•	≥600 mA
+	•	MCU, SDIO, logic
+	4.	3V3_ANALOG
+	•	Dedicated low-noise LDO
+	•	Precision sensors only
+
+Monitoring
+	•	Input voltage sense → ADC
+	•	Current sense → ADC
+	•	USB ESD protection (mandatory)
+
+5. Sensors & Precision Components
+
+Primary Inertial Sensor (POPULATED)
+	•	ICM-42688-P
+	•	Dedicated SPI bus (not shared)
+	•	Powered from 3V3_ANALOG
+	•	Placed near PCB center ( Center of Gravity )
+	•	Local decoupling mandatory
+
+Secondary Sensor
+	•	Optional footprint only (DNP in V1)
+
+Environmental Sensor
+	•	DPS310
+	•	I2C interface
+	•	Powered from 3V3_ANALOG
+
+6. Output Channels (CRITICAL)
+
+Quantity
+	•	8 independent high-speed outputs
+
+GPIO Constraint
+	•	Outputs must use NO MORE THAN TWO GPIO PORTS
+
+Fixed Pin Assignment
+
+PORT A – TIM1
+	•	PA8  → Output 1
+	•	PA9  → Output 2
+	•	PA10 → Output 3
+	•	PA11 → Output 4
+
+PORT C – TIM8
+	•	PC6 → Output 5
+	•	PC7 → Output 6
+	•	PC8 → Output 7
+	•	PC9 → Output 8
+
+ These pins are frozen.
+
+7. Connector System (MANDATORY)
+
+All connectors must follow the attached Connector Standard Document exactly.
+
+Required Connectors
+	•	Primary output connector (4-channel)
+	•	Extended output connector (8-channel)
+	•	High-speed serial interface
+	•	Auxiliary serial interface
+	•	Navigation interface
+	•	USB-C
+
+Connector type: JST-SH 1.0 mm
+
+8. Communication Interfaces
+
+UARTs (Minimum)
+	•	5 independent UARTs
+	•	Primary high-speed
+	•	Auxiliary
+	•	Navigation
+	•	Telemetry/feedback
+	•	Spare/debug
+
+Other Interfaces
+	•	SPI (dedicated, sensors)
+	•	SDIO (microSD)
+	•	I2C (environment sensor)
+	•	SWD (debug pads mandatory)
+
+9. Storage
+	•	microSD card
+	•	SDIO mode
+	•	High-rate logging capable
+
+10. Visual Status Indication
+
+Provide 4 independent LEDs, each driven by a dedicated GPIO:
+	1.	POWER – Digital power present
+	2.	STATUS – MCU heartbeat
+	3.	READY / ARM – Firmware controlled
+	4.	NAV LOCK – Firmware controlled
+
+Rules:
+	•	Series resistors mandatory
+	•	No multiplexing
+	•	PCB-edge placement
+	•	Clear silkscreen
+
+11. Boot & Recovery
+
+Board must support native MCU ROM-based recovery.
+
+Required
+	•	BOOT0 button or pads
+	•	RESET button
+	•	Test pads for BOOT0 and NRST
+	•	Clear silkscreen
+
+12. DFM / DFA (MANDATORY)
+
+The freelancer must perform Design for Manufacturability & Assembly checks, including:
+	•	Minimum trace/space compliant with JLCPCB standard capabilities
+	•	Proper solder mask openings
+	•	Adequate via-in-pad rules (if used)
+	•	Component orientation consistency
+	•	Fiducials (global + local)
+	•	Panelization guidance (if required)
+	•	Pick-and-place origin definition
+	•	Assembly clearance checks
+
+A DFM checklist document must be submitted.
+
+13. Thermal Analysis (MANDATORY)
+
+The freelancer must:
+	•	Identify thermal hotspots (MCU, regulators)
+	•	Perform steady-state thermal estimation
+	•	Ensure copper pours / thermal vias are adequate
+	•	Recommend heat-spreading strategy if junction temperature margin is low
+
+Deliverable:
+	•	Thermal analysis summary
+	•	Thermal assumptions and mitigation steps
+
+14. Signal Integrity & Power Integrity (MANDATORY)
+
+SI / PI Scope
+	•	SPI lines (IMU)
+	•	SDIO lines (microSD)
+	•	USB D+/D−
+	•	High-speed UARTs
+	•	Power rails (5V, 3V3)
+
+Requirements
+	•	Controlled impedance where applicable
+	•	Proper termination
+	•	Decoupling strategy verified
+	•	Return-path continuity validated
+
+Deliverable:
+	•	SI/PI review summary
+	•	Identified risks + mitigation
+
+15. EMI / EMC-Aware Design (MANDATORY)
+
+The PCB must be designed to minimize EMI emissions and susceptibility:
+
+Required Practices
+	•	Solid reference planes
+	•	Short return paths
+	•	No split planes under high-speed signals
+	•	LC filtering on sensitive rails
+	•	Proper grounding strategy
+	•	USB ESD and common-mode noise mitigation
+	•	Avoid high-current loops near sensors
+
+Deliverable:
+	•	EMI/EMC design notes
+	•	Layout screenshots highlighting mitigations
+
+16. Routing & Layout Rules (CRITICAL)
+
+Precision Sensor
+	•	No high-current routing nearby
+	•	Dedicated SPI
+	•	Short, direct traces
+	•	Clean ground reference
+
+Power
+	•	Wide pours
+	•	Thermal vias
+	•	Analog/digital segregation with single-point tie
+
+USB
+	•	Differential routing
+	•	Length matching
+	•	ESD close to connector
+
+17. Mandatory Deliverables
+
+The freelancer must deliver:
+	1.	Schematic (PDF + source)
+	2.	PCB layout (source + PDFs)
+	3.	Pin Map Table
+	4.	Pin Budget Table
+	5.	Manufacturing package:
+	•	Gerbers
+	•	NC Drill
+	•	BOM (supplier PNs)
+	•	Pick & Place
+	•	Assembly drawings
+	6.	DFM checklist
+	7.	Thermal analysis summary
+	8.	SI/PI review summary
+	9.	EMI/EMC design notes
+	10.	Bring-up checklist
+
+18. Acceptance Criteria (Hard Reject)
+
+Design will be rejected if:
+	•	GPIO budget is exceeded
+	•	Precision sensor shares SPI
+	•	DFM/thermal/SI/EMI reports missing
+	•	Connector pin order deviates
+	•	Recovery hardware missing
+	•	Documentation incomplete
+
+19. Reference Documents (ATTACHED)
+	•	Connector Standard Document
+	•	STM32H743VIT6 Datasheet (ST)
